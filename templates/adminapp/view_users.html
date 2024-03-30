@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h2>User Accounts</h2>
+    <table>
+        <!-- Table headers -->
+        <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Balance</th>
+            <th>Currency</th>
+            <th>View</th>
+        </tr>
+        <!-- Table content -->
+        {% for user in users %}
+            <tr>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.account.balance }}</td>
+                <td>{{ user.account.currency }}</td>
+                <td><a href="{% url 'adminapp:user_profile' user.id %}">View Profile</a></td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

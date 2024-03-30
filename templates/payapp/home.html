@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-4">
+        {% if request.user.is_authenticated %}
+            <h1>Welcome back, {{ request.user.username }}!</h1>
+            {% if account %}
+                <p>Your current balance is: {{ account.balance }} {{ account.currency }}</p>
+            {% else %}
+                <p>You do not have an account set up.</p>
+            {% endif %}
+        {% else %}
+            <h1>Welcome to WebApp2024</h1>
+            <p><strong>This is a web application description, accessible to everyone. Log in or register to access more features.</strong></p>
+        {% endif %}
+    </div>
+{% endblock %}

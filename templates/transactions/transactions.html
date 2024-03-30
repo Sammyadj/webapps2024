@@ -1,0 +1,35 @@
+<!-- transactions/transactions.html -->
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <div class="container mt-3">
+        <h2>Your Transactions</h2>
+        {% if transactions %}
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Sender</th>
+                    <th>Receiver</th>
+                    <th>Amount</th>
+                    <th>Currency</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for transaction in transactions %}
+                    <tr>
+                        <td>{{ transaction.timestamp }}</td>
+                        <td>{{ transaction.sender.username }}</td>
+                        <td>{{ transaction.receiver.username }}</td>
+                        <td>{{ transaction.amount }}</td>
+                        <td>{{ transaction.currency }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>You have no transactions.</p>
+        {% endif %}
+    </div>
+{% endblock %}
