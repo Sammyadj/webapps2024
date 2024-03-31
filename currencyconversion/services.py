@@ -13,6 +13,7 @@ RATES = {
 }
 
 apiKey = "fb9ae3b13f145341c09d2afe"
+url = f"https://v6.exchangerate-api.com/v6/{apiKey}/latest/USD"
 
 def convert_currency(amount, from_currency, to_currency):
     conversion_key = f"{from_currency}_to_{to_currency}"
