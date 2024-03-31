@@ -12,6 +12,7 @@ RATES = {
     'USD_to_EUR': Decimal('0.9271')
 }
 
+apiKey = "fb9ae3b13f145341c09d2afe"
 
 def convert_currency(amount, from_currency, to_currency):
     conversion_key = f"{from_currency}_to_{to_currency}"
@@ -25,7 +26,7 @@ def convert_currency(amount, from_currency, to_currency):
 
 def get_conversion_rate(from_currency, to_currency):
     response = requests.get(
-        f"https://api.exchangerate-api.com/v4/latest/{from_currency}",
+        f"https://v6.exchangerate-api.com/v6/fb9ae3b13f145341c09d2afe/latest/{from_currency}",
         params={"apiKey": settings.EXCHANGE_RATE_API_KEY}
     )
     response.raise_for_status()  # Will raise an HTTPError if the HTTP request returned an unsuccessful status code

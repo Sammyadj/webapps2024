@@ -6,12 +6,10 @@ from payapp.models import Account
 from .forms import RegisterForm
 from django.contrib import messages
 from decimal import Decimal
+from django.urls import reverse
 
 
 def register_user(request):
-    if request.user.is_authenticated:
-        return redirect('home')
-
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
@@ -29,7 +27,7 @@ def register_user(request):
             # Create the user's Account with the converted balance
             Account.objects.create(user=user, balance=initial_balance, currency=selected_currency)
 
-            messages.success(request, 'Registration Successful')
+            messages.success(request, 'Registration Successful!')
             return redirect('login')
         else:
             messages.error(request, 'Unsuccessful registration. Invalid information.')
@@ -39,15 +37,21 @@ def register_user(request):
 
 
 def login_user(request):
+    if request.user.is_authenticated:
+        return redirect('home')
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
             user = authenticate(request, username=username, password=password)
-            if user is not None:
+            # if user is not None:
+            #     login(request, user)
+            #     return redirect('home')
+            if user is not None and user.is_active:
                 login(request, user)
-                return redirect('home')
+                next_url = request.GET.get('next', reverse('home'))  # Default to 'home' if no next parameter
+                return redirect(next_url)
             else:
                 messages.error(request, "Invalid username or password.")
     else:
@@ -57,4 +61,4 @@ def login_user(request):
 
 def logout_user(request):
     logout(request)
-    return redirect('login')  # Redirect to the login page after logout
+    return redirect('home')  # Redirect to the login page after logout

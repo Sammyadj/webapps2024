@@ -55,10 +55,11 @@ class TransferForm(forms.Form):
         # return the full collection of cleaned data
         return cleaned_data
 
-
 class RequestForm(forms.Form):
-    # Add the necessary fields for requesting money
-    requester = forms.CharField(max_length=150, label=_('Requester'), required=False)
+    receiver_email = forms.EmailField(label=_('Receiver Email'), help_text=_('Enter the email of the user to request money from.'))
     amount = forms.DecimalField(max_digits=10, decimal_places=2, label=_('Amount'))
-    currency = forms.ChoiceField(choices=currency_choices, label=_('Currency'))
-    # Add any additional fields and methods needed
+    currency = forms.ChoiceField(choices=currency_choices)
+
+
+class PaymentConfirmationForm(forms.Form):
+    confirm = forms.BooleanField(widget=forms.HiddenInput(), initial=True)

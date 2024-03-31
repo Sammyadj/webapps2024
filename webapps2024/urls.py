@@ -27,5 +27,4 @@ urlpatterns = [
     path("register/", register_views.register_user, name='register'),
     path('transactions/', include('transactions.urls')),
     path('adminapp/', include('adminapp.urls'))
-
 ]
