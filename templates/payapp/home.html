@@ -11,7 +11,7 @@
             {% endif %}
         {% else %}
             <h1>Welcome to WebApp2024</h1>
-            <p><strong>This is a Payment Services application description, accessible to everyone. Log in or register to access more features.</strong></p>
+            <p><strong>This is a Payment Services application description, accessible to everyone. <a href="{% url 'login' %}">Log in</a> or <a href="{% url 'register' %}">register</a> to access more features.</strong></p>
         {% endif %}
     </div>
 {% endblock %}

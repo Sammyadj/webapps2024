@@ -14,14 +14,15 @@
                     <a class="nav-link {% if active_tab == 'request' %}active{% endif %}"
                        href="{% url 'transactions:send_and_receive' tab='request' %}">Request</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if active_tab == 'request_web' %}active{% endif %}"
+                       href="{% url 'transactions:send_and_receive' tab='request_web' %}">Request on web</a>
+                </li>
             </ul>
         </div>
     </nav>
 
-{#    <div class="sub-navbar">#}
-{#        <a href="{% url 'transactions:send_and_receive' tab='send' %}" class="{% if active_tab == 'send' %}active{% endif %}">Send</a>#}
-{#        <a href="{% url 'transactions:send_and_receive' tab='request' %}" class="{% if active_tab == 'request' %}active{% endif %}">Request</a>#}
-{#    </div>#}
+
 
     <!-- Content for Send Money or Request Money -->
     <div class="mt-3">
@@ -37,10 +38,19 @@
             </div>
         {% elif active_tab == 'request' %}
             <div class="container mt-3">
-                <h2>Request Money</h2>
+                <h2>Request Money through Email</h2>
                 <form method="post">
                     {% csrf_token %}
                     {{ request_form|crispy }}
+                    <button type="submit" class="btn btn-primary">Request</button>
+                </form>
+            </div>
+        {% elif active_tab == 'request_web' %}
+            <div class="container mt-3">
+                <h2>Request Money on Webapp</h2>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ money_request_form|crispy }}
                     <button type="submit" class="btn btn-primary">Request</button>
                 </form>
             </div>
