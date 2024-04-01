@@ -1,23 +1,83 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .forms import TransferForm, RequestForm, User
+from .forms import TransferForm, RequestForm, User, PaymentConfirmationForm
 from .models import Transaction, MoneyRequest
 from django.db.models import Q
 from payapp.models import Account
 from currencyconversion.services import convert_currency
 from django.db import transaction as db_transaction
 from django.contrib import messages
+from django.core.mail import send_mail
+from django.urls import reverse
+
+
+@login_required
+def handle_payment(request, money_request_id):
+    money_request = get_object_or_404(MoneyRequest, id=money_request_id)
+
+    # Check if the logged-in user is the requested_from user
+    if request.user != money_request.requested_from:
+        messages.error(request, "You do not have permission to access this page.")
+        return redirect('transactions:list')
+
+    # Here, implement the logic to handle the payment process
+    # This could involve showing a form to confirm the payment,
+    # processing the payment, updating the MoneyRequest status, etc.
+    # For simplicity, let's just update the MoneyRequest status to "PAID"
+    if request.method == 'POST':
+        # If you're using the Django form
+        form = PaymentConfirmationForm(request.POST)
+        if form.is_valid():
+            # Process payment here
+            money_request.status = 'PAID'
+            money_request.save()
+            messages.success(request, "Payment successful.")
+            return redirect('transactions:list')
+        # Else, for a simple HTML form
+        money_request.status = 'PAID'
+        money_request.save()
+        messages.success(request, "Payment successful.")
+        return redirect('transactions:list')
+    else:
+        # If you're using the Django form
+        form = PaymentConfirmationForm()  # Uncomment if using the Django form approach
+        return render(request, 'transactions/handle_payment.html', {'form': form, 'money_request': money_request})
+        # return render(request, 'transactions/handle_payment.html', {'money_request': money_request})
+
+
+@login_required
+def decline_payment(request, money_request_id):
+    money_request = get_object_or_404(MoneyRequest, id=money_request_id)
+
+    # Check if the logged-in user is the requested_from user
+    if request.user != money_request.requested_from:
+        messages.error(request, "You do not have permission to access this page.")
+        return redirect('transactions:list')
+
+    # Update the MoneyRequest status to "DECLINED"
+    money_request.status = 'DECLINED'
+    money_request.save()
+    messages.success(request, "Payment declined.")
+    return redirect('transactions:list')
 
 @login_required
 def request_money(request):
+    context = {'active_tab': 'request'}
     if request.method == 'POST':
-        form = RequestForm(request.POST)
-        if form.is_valid():
-            receiver_email = form.cleaned_data['receiver_email']
-            amount = form.cleaned_data['amount']
-            currency = form.cleaned_data['currency']
-            # Assuming you have a method to get the user object from the email
-            requested_from = User.objects.get(email=receiver_email)
+        request_form = RequestForm(request.POST)
+        if request_form.is_valid():
+            receiver_email = request_form.cleaned_data['receiver_email']
+            amount = request_form.cleaned_data['amount']
+            currency = request_form.cleaned_data['currency']
+
+            # Retrieve the user object for the given email, if exists
+            try:
+                requested_from = User.objects.get(email=receiver_email)
+
+            except User.DoesNotExist:
+                messages.error(request, "No user with this email found.")
+                return render(request, 'transactions/send_and_receive.html', {'form': request_form})
+
             # Create the money request instance
             money_request = MoneyRequest.objects.create(
                 requester=request.user,
@@ -25,27 +85,43 @@ def request_money(request):
                 amount_requested=amount,
                 currency=currency
             )
-            # Logic to send email to the receiver with the request link goes here
-            # ...
+
+            # Email the receiver
+            send_mail(
+                'Money Request',
+                f"You have received a money request from {request.user.get_full_name()}.",
+                None,
+                [requested_from.email],
+                fail_silently=False,
+                html_message=f"""<p>{request.user.get_full_name()} sent you a money request.</p>
+                                 <p><strong>Amount requested:</strong> {amount} {currency}</p>
+                                 <a href="{request.build_absolute_uri(reverse('transactions:handle_payment', args=[money_request.id]))}">Pay Now</a>
+                                 <p>or</p>
+                                 <a href="{request.build_absolute_uri(reverse('transactions:decline_payment', args=[money_request.id]))}">Decline</a>""",
+            )
             messages.success(request, 'Money request sent successfully.')
             return redirect('transactions:list')
     else:
-        form = RequestForm()
-    context = {'form': form, 'active_tab': 'request'}
+        request_form = RequestForm()
+        context['request_form'] = request_form
+
+    # context = {'request_form': request_form, 'active_tab': 'request'}
     return render(request, 'transactions/send_and_receive.html', context)
 
+
 def send_money(request):
+    context = {'active_tab': 'send'}
     if request.method == 'POST':
-        form = TransferForm(request.POST, initial={'user': request.user})
-        if form.is_valid():
-            receiver = form.cleaned_data['receiver']
-            amount = form.cleaned_data['amount']
-            currency = form.cleaned_data['currency']
+        send_form = TransferForm(request.POST, initial={'user': request.user})
+        if send_form.is_valid():
+            receiver = send_form.cleaned_data['receiver']
+            amount = send_form.cleaned_data['amount']
+            currency = send_form.cleaned_data['currency']
 
             # Ensure that the receiver is not the same as the sender
             if receiver == request.user:
                 messages.error(request, "You cannot transfer money to yourself.")
-                return render(request, 'transactions/transfer.html', {'form': form})
+                return render(request, 'transactions/send_and_receive.html', {'form': send_form})
 
             # Start a database transaction
             with db_transaction.atomic():
@@ -76,22 +152,25 @@ def send_money(request):
         else:
             messages.error(request, "There was an error with your submission.")
     else:
-        form = TransferForm(initial={'user': request.user})
+        send_form = TransferForm(initial={'user': request.user})
+        context['send_form'] = send_form
 
-    context = {'form': form, 'active_tab': 'send'} # Pass the form to the context
+    # context = {'form': form, 'active_tab': 'send'} # Pass the form to the context
 
     return render(request, 'transactions/send_and_receive.html', context)
 
+
 @login_required
 def send_and_receive(request, tab="send"):
-    context = {'active_tab': tab}
+    # context = {'active_tab': tab}
     if tab == "send":
         return send_money(request)
     elif tab == "request":
         return request_money(request)
-    else:
-        # If an invalid tab is provided, redirect to the default 'send' tab
-        return redirect('transactions:send_and_receive', tab='send')
+    # else:
+    #     # If an invalid tab is provided, redirect to the default 'send' tab
+    #     return redirect('transactions:send_and_receive', tab='send')
+
 
 @login_required
 def transaction_list(request):
