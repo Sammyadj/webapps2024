@@ -6,4 +6,4 @@ from .models import CurrencyConversion
 class CurrencyConversionSerializer(serializers.ModelSerializer):
     class Meta:
         model = CurrencyConversion
-        fields = ["code"]
+        fields = '__all__'

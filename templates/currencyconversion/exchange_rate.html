@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Exchange Rate{% endblock %}
+
+{% block content %}
+    <h1>Exchange Rate</h1><br>
+    <form method="post">
+        {% csrf_token %}
+        {{ forms|crispy }}
+        <button type="submit">Convert</button>
+    </form>
+    {% if results %}
+        <p>Converted Amount: {{ results }}</p>
+        {{results.as_p}}
+    {% endif %}
+{% endblock %}
+

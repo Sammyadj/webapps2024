@@ -44,8 +44,8 @@ INSTALLED_APPS = [
     "adminapp.apps.AdminappConfig",
     "django_extensions",
     "werkzeug",
-    "requests"
-    "rest_framework"
+    "requests",
+    "rest_framework",
     # "pyOpenSSL"
 
 ]

@@ -9,10 +9,9 @@ User = get_user_model()
 # if not, you would need to define it. For now, I'm going to create a sample.
 
 CURRENCY_CHOICES = [
-    ('USD', 'US Dollar'),
-    ('EUR', 'Euro'),
     ('GBP', 'British Pound'),
-]
+    ('USD', 'US Dollar'),
+    ('EUR', 'Euro'), ]
 
 class MoneyRequestForm(forms.Form):
     receiver_username = forms.CharField(

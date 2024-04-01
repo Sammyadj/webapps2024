@@ -27,5 +27,6 @@ urlpatterns = [
     path("register/", register_views.register_user, name='register'),
     path('transactions/', include('transactions.urls')),
     path('adminapp/', include('adminapp.urls')),
-    path('payapp/', include('payapp.urls'))
+    path('payapp/', include('payapp.urls')),
+    path('currencyconversion/', include('currencyconversion.urls')),
 ]

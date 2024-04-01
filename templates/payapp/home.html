@@ -9,6 +9,7 @@
             {% else %}
                 <p>You do not have an account set up.</p>
             {% endif %}
+            <p><a href="{% url 'currencyconversion:exchange_rate' %}">Currency Conversion</a></p>
         {% else %}
             <h1>Welcome to WebApp2024</h1>
             <p><strong>This is a Payment Services application description, accessible to everyone. <a href="{% url 'login' %}">Log in</a> or <a href="{% url 'register' %}">register</a> to access more features.</strong></p>
