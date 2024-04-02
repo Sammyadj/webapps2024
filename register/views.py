@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import AuthenticationForm
-from currencyconversion.services import convert_currency
+from currencyconversion.converter import convert_currency, api_converter1, api_converter2
 from payapp.models import Account
 from .forms import RegisterForm
 from django.contrib import messages
@@ -45,9 +45,6 @@ def login_user(request):
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
             user = authenticate(request, username=username, password=password)
-            # if user is not None:
-            #     login(request, user)
-            #     return redirect('home')
             if user is not None and user.is_active:
                 login(request, user)
                 next_url = request.GET.get('next', reverse('home'))  # Default to 'home' if no next parameter

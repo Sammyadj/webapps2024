@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .converter import convert_currency
+from .converter import convert_currency,api_converter1, api_converter2
 from .forms import CurrencyConversionForm
 from django.contrib import messages
 
@@ -11,7 +11,7 @@ def exchange_rate(request):
             amount = forms.cleaned_data['amount']
             from_currency = forms.cleaned_data['from_currency']
             to_currency = forms.cleaned_data['to_currency']
-            results = convert_currency(amount, from_currency, to_currency)
+            results = api_converter2(amount, from_currency, to_currency)
             return render(request, 'currencyconversion/exchange_rate.html', {'forms': forms, 'results': results})
         else:
             messages.error(request, 'Invalid form')

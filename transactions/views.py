@@ -4,7 +4,7 @@ from .forms import TransferForm, RequestForm, User, PaymentConfirmationForm
 from .models import Transaction, MoneyRequest
 from django.db.models import Q
 from payapp.models import Account
-from currencyconversion.services import convert_currency
+from currencyconversion.converter import convert_currency, api_converter1, api_converter2
 from django.db import transaction as db_transaction
 from django.contrib import messages
 from django.core.mail import send_mail
@@ -128,7 +128,7 @@ def send_money(request):
 
                 # Convert the amount to the receiver's currency if different
                 if sender_account.currency != receiver_account.currency:
-                    amount = convert_currency(amount, sender_account.currency, receiver_account.currency)
+                    amount = api_converter2(amount, sender_account.currency, receiver_account.currency)
 
                 # Create the transaction record
                 Transaction.objects.create(
