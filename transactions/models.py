@@ -29,6 +29,7 @@ class MoneyRequest(models.Model):
         settings.AUTH_USER_MODEL, related_name='money_requests_received',
         on_delete=models.CASCADE
     )
+    # amount = models.DecimalField(max_digits=10, decimal_places=2)
     amount_requested = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=3, choices=currency_choices)
     status = models.CharField(max_length=10,

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Inbox</h1>
+    {% if emails %}
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Subject</th>
+                <th>Received</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for email in emails %}
+                <tr class="{% if not email.read %}table-primary{% endif %}">
+                    <td>{{ email.subject }}</td>
+                    <td>{{ email.sent_at }}</td>
+                    <td>{{ email.read|yesno:"Read,Unread" }}</td>
+                    <td>
+                        <a href="{% url 'payapp:mail_detail' email.id %}">View</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You have no emails.</p>
+    {% endif %}
+{% endblock %}

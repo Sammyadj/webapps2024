@@ -4,11 +4,12 @@ from .forms import TransferForm, RequestForm, User, PaymentConfirmationForm
 from .models import Transaction, MoneyRequest
 from django.db.models import Q
 from payapp.models import Account
-from currencyconversion.services import convert_currency
+from currencyconversion.converter import convert_currency, api_converter1, api_converter2
 from django.db import transaction as db_transaction
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.urls import reverse
+from payapp.views import request_money as request_money_web
 
 
 @login_required
@@ -20,10 +21,6 @@ def handle_payment(request, money_request_id):
         messages.error(request, "You do not have permission to access this page.")
         return redirect('transactions:list')
 
-    # Here, implement the logic to handle the payment process
-    # This could involve showing a form to confirm the payment,
-    # processing the payment, updating the MoneyRequest status, etc.
-    # For simplicity, let's just update the MoneyRequest status to "PAID"
     if request.method == 'POST':
         # If you're using the Django form
         form = PaymentConfirmationForm(request.POST)
@@ -131,7 +128,7 @@ def send_money(request):
 
                 # Convert the amount to the receiver's currency if different
                 if sender_account.currency != receiver_account.currency:
-                    amount = convert_currency(amount, sender_account.currency, receiver_account.currency)
+                    amount = api_converter2(amount, sender_account.currency, receiver_account.currency)
 
                 # Create the transaction record
                 Transaction.objects.create(
@@ -167,9 +164,8 @@ def send_and_receive(request, tab="send"):
         return send_money(request)
     elif tab == "request":
         return request_money(request)
-    # else:
-    #     # If an invalid tab is provided, redirect to the default 'send' tab
-    #     return redirect('transactions:send_and_receive', tab='send')
+    elif tab == "request_web":
+        return request_money_web(request)
 
 
 @login_required

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="email-detail">
+        <h1>{{ email.subject }}</h1>
+        <p><strong>From:</strong> {{ email.from_user.get_full_name }}</p>
+        <p><strong>Sent:</strong> {{ email.sent_at }}</p>
+        <div class="email-body">
+            {{ email.body|linebreaks }}
+        </div>
+
+        <!-- Assuming you have some method of confirming or declining payment requests -->
+        {% if email.subject == "Money Request" %}
+            <form action="{% url 'payapp:confirm_payment' email.id %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success">Confirm Payment</button>
+            </form>
+            <form action="{% url 'payapp:decline_payment' email.id %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Decline Payment</button>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}
