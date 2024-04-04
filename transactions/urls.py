@@ -10,4 +10,6 @@ urlpatterns = [
     path('send_and_receive/<str:tab>/', views.send_and_receive, name='send_and_receive'),
     path('handle_payment/<int:money_request_id>/', views.handle_payment, name='handle_payment'),
     path('decline_payment/<int:money_request_id>/', views.decline_payment, name='decline_payment'),
+    path('transaction_summary/', views.transaction_summary, name='transaction_summary'),
+    path('confirm_transaction/', views.confirm_transaction, name='confirm_transaction')
 ]

@@ -13,6 +13,7 @@ CURRENCY_CHOICES = [
     ('USD', 'US Dollar'),
     ('EUR', 'Euro'), ]
 
+
 class MoneyRequestForm(forms.Form):
     receiver_username = forms.CharField(
         max_length=150,

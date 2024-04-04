@@ -1,4 +1,13 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
+{#<nav class="navbar navbar-expand-lg navbar-light bg-light">#}
+{% url 'home' as home_url %}
+{% url 'transactions:send_and_request_homepage' as send_request_url %}
+{% url 'transactions:list' as transactions_list_url %}
+{% url 'logout' as logout_url %}
+{% url 'payapp:mail_list' as mail_list_url %}
+{% url 'adminapp:view_users' as view_users_url %}
+{% url 'adminapp:view_transactions' as view_transactions_url %}
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <a class="navbar-brand" href="{% url 'home' %}">WebApp2024</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="False" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -8,26 +17,26 @@
         <ul class="navbar-nav">
             {% if user.is_authenticated %}
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'home' %}">Home</a>
+                    <a class="nav-link {% if request.path == home_url %}active{% endif %}" href="{{ home_url }}">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'transactions:send_and_request_homepage' %}">Send and Request</a>
+                    <a class="nav-link {% if request.path == send_request_url %}active{% endif %}" href="{{ send_request_url }}">Send and Request</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'transactions:list' %}">Transactions</a>
+                    <a class="nav-link {% if request.path == transactions_list_url %}active{% endif %}" href="{{ transactions_list_url }}">Transactions</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                    <a class="nav-link {% if request.path == logout_url %}active{% endif %}" href="{{ logout_url }}">Logout</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'payapp:mail_list' %}">Mail</a>
+                    <a class="nav-link {% if request.path == mail_list_url %}active{% endif %}" href="{{ mail_list_url }}">Mail</a>
                 </li>
                 {% if request.user.is_staff or request.user.is_superuser %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'adminapp:view_users' %}">View Users</a>
+                        <a class="nav-link {% if request.path == view_users_url %}active{% endif %}" href="{{ view_users_url }}">View Users</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'adminapp:view_transactions' %}">View Transactions</a>
+                        <a class="nav-link {% if request.path == view_transactions_url %}active{% endif %}" href="{{ view_transactions_url }}">View Transactions</a>
                     </li>
                 {% endif %}
 

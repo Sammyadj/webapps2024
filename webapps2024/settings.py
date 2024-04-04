@@ -134,7 +134,7 @@ AUTH_USER_MODEL = 'register.User'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
-DEFAULT_FROM_EMAIL = 'samueladjei200@outlook.com'
+DEFAULT_FROM_EMAIL = 'webapps2024@sussex.ac.uk'
 
 LOGIN_URL = '/login/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -144,4 +144,4 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # EMAIL_PORT = 587
 # EMAIL_USE_TLS = False
 # EMAIL_HOST_USER = 'samueladjei200@gmail.com'
-# EMAIL_HOST_PASSWORD = 'sam!Sam1!'
+# EMAIL_HOST_PASSWORD = ''

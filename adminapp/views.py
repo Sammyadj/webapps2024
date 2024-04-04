@@ -9,13 +9,12 @@ from django.contrib import messages
 
 
 
-# a custom decorator to check if the user is an admin before allowing access to the view:
+# a custom decorator to check if the user is an admin (superuser) before allowing access to the view:
 def admin_required(view_func):
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_superuser:
             return HttpResponseForbidden()
         return view_func(request, *args, **kwargs)
-
     return _wrapped_view
 
 
@@ -49,26 +48,6 @@ def register_admin(request):
 
     return render(request, 'adminapp/register_admin.html', {'form': form})
 
-@login_required
-def user_profile(request, user_id):
-    user = get_object_or_404(User, pk=user_id)
-
-    # Allow any logged-in staff member to make another user an admin
-    if 'make_admin' in request.POST:
-        user.is_staff = True
-        user.save()
-        messages.success(request, f"{user.username} has been made an admin.")
-        return redirect('adminapp:user_profile', user_id=user_id)
-
-    # Only superusers can remove admin rights, and cannot remove their own rights
-    if 'remove_admin' in request.POST and request.user.is_superuser and user != request.user:
-        user.is_staff = False
-        user.is_superuser = False
-        user.save()
-        messages.success(request, f"Admin rights removed from {user.username}.")
-        return redirect('adminapp:user_profile', user_id=user_id)
-
-    return render(request, 'adminapp/user_profile.html', {'profile_user': user})
 
 @login_required
 def user_profile(request, user_id):
@@ -94,7 +73,7 @@ def user_profile(request, user_id):
     return render(request, 'adminapp/user_profile.html', {'profile_user': user})
 
 
-
+# This method is only accessible by superusers
 @admin_required
 def delete_user(request, user_id):
     user_to_delete = get_object_or_404(User, pk=user_id)

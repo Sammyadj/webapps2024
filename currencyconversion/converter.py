@@ -27,7 +27,7 @@ apiKey = "fb9ae3b13f145341c09d2afe"  # exchangerate-api.com
 url = f"https://v6.exchangerate-api.com/v6/{apiKey}/latest/USD"
 
 
-def api_converter1(amount, from_currency, to_currency): # from exchangerate-api.com
+def api_converter1(amount, from_currency, to_currency):  # from exchangerate-api.com
     response = requests.get(
         f"https://v6.exchangerate-api.com/v6/{apiKey}/latest/{from_currency}",
         params={"apiKey": apiKey}
@@ -43,7 +43,7 @@ def api_converter1(amount, from_currency, to_currency): # from exchangerate-api.
 API_KEY = "fca_live_o3Jzv9ecthHunIQ2aONbN4OboAQIaTVcd632jIOP"  # freecurrencyapi.com
 
 
-def api_converter2(amount, from_currency, to_currency): # from freecurrencyapi.com
+def api_converter2(amount, from_currency, to_currency):  # from freecurrencyapi.com
     response = requests.get(
         f"https://api.freecurrencyapi.com/v1/latest?apikey={API_KEY}&base_currency={from_currency}&currencies={to_currency}")
     data = response.json()
@@ -51,3 +51,12 @@ def api_converter2(amount, from_currency, to_currency): # from freecurrencyapi.c
     target_rate = rates[to_currency]
     converted_amount = Decimal(amount) * Decimal(target_rate)
     return converted_amount.quantize(Decimal('0.01'))
+
+
+def get_conversion_rate(from_currency, to_currency):
+    response = requests.get(
+        f"https://api.freecurrencyapi.com/v1/latest?apikey={API_KEY}&base_currency={from_currency}&currencies={to_currency}")
+    data = response.json()
+    rates = data['data']
+    target_rate = rates[to_currency]
+    return target_rate

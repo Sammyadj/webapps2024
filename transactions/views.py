@@ -1,15 +1,17 @@
+from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .forms import TransferForm, RequestForm, User, PaymentConfirmationForm
 from .models import Transaction, MoneyRequest
 from django.db.models import Q
 from payapp.models import Account
-from currencyconversion.converter import convert_currency, api_converter1, api_converter2
+from currencyconversion.converter import convert_currency, api_converter1, api_converter2, get_conversion_rate
 from django.db import transaction as db_transaction
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.urls import reverse
-from payapp.views import request_money as request_money_web
+from payapp.views import request_money_web
+from django.http import HttpResponseNotAllowed
 
 
 @login_required
@@ -36,10 +38,8 @@ def handle_payment(request, money_request_id):
         messages.success(request, "Payment successful.")
         return redirect('transactions:list')
     else:
-        # If you're using the Django form
-        form = PaymentConfirmationForm()  # Uncomment if using the Django form approach
+        form = PaymentConfirmationForm()
         return render(request, 'transactions/handle_payment.html', {'form': form, 'money_request': money_request})
-        # return render(request, 'transactions/handle_payment.html', {'money_request': money_request})
 
 
 @login_required
@@ -57,9 +57,11 @@ def decline_payment(request, money_request_id):
     messages.success(request, "Payment declined.")
     return redirect('transactions:list')
 
+
 @login_required
-def request_money(request):
-    context = {'active_tab': 'request'}
+def request_money_email(request):
+    # EMAIL_BACKEND has been set to console to send email content to console
+    context = {'active_tab': 'request_email'}
     if request.method == 'POST':
         request_form = RequestForm(request.POST)
         if request_form.is_valid():
@@ -83,7 +85,7 @@ def request_money(request):
                 currency=currency
             )
 
-            # Email the receiver
+            # Email the receiver with django's send_email module
             send_mail(
                 'Money Request',
                 f"You have received a money request from {request.user.get_full_name()}.",
@@ -111,49 +113,39 @@ def send_money(request):
     if request.method == 'POST':
         send_form = TransferForm(request.POST, initial={'user': request.user})
         if send_form.is_valid():
-            receiver = send_form.cleaned_data['receiver']
-            amount = send_form.cleaned_data['amount']
-            currency = send_form.cleaned_data['currency']
+            receiver_username = send_form.cleaned_data['receiver']
+            amount = str(send_form.cleaned_data['amount'])
+            selected_currency = send_form.cleaned_data['currency']
 
-            # Ensure that the receiver is not the same as the sender
-            if receiver == request.user:
+            # Retrieve accounts
+            sender_account = get_object_or_404(Account, user=request.user)
+            receiver_account = get_object_or_404(Account, user__username=receiver_username)
+
+            if receiver_account == sender_account:  # Ensure that the receiver is not the same as the sender
                 messages.error(request, "You cannot transfer money to yourself.")
-                return render(request, 'transactions/send_and_receive.html', {'form': send_form})
+                send_form = TransferForm()
+                context['send_form'] = send_form
+                return render(request, 'transactions/send_and_receive.html', context)
 
-            # Start a database transaction
-            with db_transaction.atomic():
-                sender_account = Account.objects.select_for_update().get(
-                    user=request.user)  # ensures that the rows are locked until the end of the transaction block.
-                receiver_account = Account.objects.select_for_update().get(user=receiver)
+            if selected_currency != receiver_account.currency:
+                messages.error(request, "The selected currency must be the same as the receiver's currency.")
+                send_form = TransferForm()
+                context['send_form'] = send_form
+                return render(request, 'transactions/send_and_receive.html', context)
 
-                # Convert the amount to the receiver's currency if different
-                if sender_account.currency != receiver_account.currency:
-                    amount = api_converter2(amount, sender_account.currency, receiver_account.currency)
-
-                # Create the transaction record
-                Transaction.objects.create(
-                    sender=request.user,
-                    receiver=receiver,
-                    amount=amount,
-                    currency=currency
-                )
-
-                # Update the sender's and receiver's account balances
-                sender_account.balance -= amount
-                sender_account.save()
-
-                receiver_account.balance += amount
-                receiver_account.save()
-            messages.success(request, "Transfer successful.")
-            return redirect('transactions:list')
+            request.session['transaction_data'] = {
+                'amount': amount,
+                'recipient': receiver_account.user.username,
+                'recipient_currency': receiver_account.currency,
+                'sender_currency': sender_account.currency
+                # Using session for conversion rate as it may change before the user confirms the transaction
+            }
+            return redirect('transactions:transaction_summary')
         else:
             messages.error(request, "There was an error with your submission.")
     else:
-        send_form = TransferForm(initial={'user': request.user})
+        send_form = TransferForm()
         context['send_form'] = send_form
-
-    # context = {'form': form, 'active_tab': 'send'} # Pass the form to the context
-
     return render(request, 'transactions/send_and_receive.html', context)
 
 
@@ -162,16 +154,76 @@ def send_and_receive(request, tab="send"):
     # context = {'active_tab': tab}
     if tab == "send":
         return send_money(request)
-    elif tab == "request":
-        return request_money(request)
+    elif tab == "request_email":
+        return request_money_email(request)
     elif tab == "request_web":
         return request_money_web(request)
+
+
+@login_required
+def transaction_summary(request):
+    transaction_data = request.session.get('transaction_data')
+    if not transaction_data:
+        messages.error(request, 'Transaction data is missing.')
+        return redirect('transactions:send_money')
+
+    conversion_rate = get_conversion_rate(transaction_data['sender_currency'], transaction_data['recipient_currency'])
+    converted_amount = api_converter2(Decimal(transaction_data['amount']), transaction_data['sender_currency'], transaction_data['recipient_currency'])
+
+    context = {
+        'amount': transaction_data['amount'],
+        'recipient': transaction_data['recipient'],
+        'recipient_currency': transaction_data['recipient_currency'],
+        'sender_currency': transaction_data['sender_currency'],
+        'conversion_rate': conversion_rate,
+        'converted_amount': converted_amount
+    }
+    return render(request, 'transactions/transaction_summary.html', context)
+
+
+@login_required
+def confirm_transaction(request):
+    if request.method == 'POST':
+        transaction_data = request.session.get('transaction_data')
+        if not transaction_data:
+            messages.error(request, 'No transaction data found.')
+            return redirect('transactions:send_money')
+
+        with db_transaction.atomic():
+            sender_account = Account.objects.select_for_update().get(user=request.user)
+            receiver = User.objects.get(username=transaction_data['recipient'])
+            amount = Decimal(transaction_data['amount'])
+            currency = transaction_data['recipient_currency']
+            receiver_account = Account.objects.select_for_update().get(user=receiver)
+
+            # Convert the amount to the receiver's currency if different
+            if sender_account.currency != receiver_account.currency:
+                amount = api_converter2(amount, sender_account.currency, receiver_account.currency)
+
+            # Create the transaction record
+            Transaction.objects.create(
+                sender=request.user,
+                receiver=receiver,
+                amount=amount,
+                currency=currency
+            )
+
+            # Update the sender's and receiver's account balances
+            sender_account.balance -= amount  # Deduct the amount entered from the sender's balance
+            sender_account.save()
+            receiver_account.balance += amount  # Add the converted amount to the receiver's balance
+            receiver_account.save()
+
+            del request.session['transaction_data']
+            messages.success(request, "Transfer successful.")
+            return redirect('transactions:list')  # redirect to a success page
+    else:
+        return HttpResponseNotAllowed(['POST'])
 
 
 @login_required
 def transaction_list(request):
     # Get all transactions where the user is either the sender or the receiver
     transactions = Transaction.objects.filter(
-        Q(sender=request.user) | Q(receiver=request.user)
-    ).order_by('-timestamp')
+        Q(sender=request.user) | Q(receiver=request.user)).order_by('-timestamp')  # order it by timestamp
     return render(request, 'transactions/transactions.html', {'transactions': transactions})

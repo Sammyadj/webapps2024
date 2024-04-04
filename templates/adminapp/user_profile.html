@@ -7,6 +7,7 @@
     <p>Last name: {{ profile_user.last_name }}</p>
     <p>Balance: {{ profile_user.account.balance }}</p>
 
+
     <form method="post">
         {% csrf_token %}
         <!-- Display the "Make Admin" button only if the user is not a staff member -->
@@ -17,17 +18,42 @@
         {% if request.user.is_superuser and profile_user.is_staff and profile_user != request.user %}
             <button type="submit" name="remove_admin" class="btn btn-warning">Remove Admin Rights</button>
         {% endif %}
+        {% if request.user.is_superuser and profile_user != request.user %}
+            <form method="post" action="{% url 'adminapp:delete_user' profile_user.id%}">
+                <button type="submit" class="btn btn-danger">Delete</button>
+            </form>
+        {% endif %}
     </form>
 
-{#    <form method="post">#}
-{#        {% csrf_token %}#}
-{#        <!-- Allow staff members to make other users admins, but do not display the button for the current user -->#}
-{#        {% if request.user.is_staff and not profile_user.is_superuser and profile_user != request.user %}#}
-{#            <button type="submit" name="make_admin" class="btn btn-primary">Make Admin</button>#}
-{#        {% endif %}#}
-{#        <!-- Allow only superusers to remove admin rights, but not from themselves -->#}
-{#        {% if request.user.is_superuser and profile_user.is_superuser and profile_user != request.user %}#}
-{#            <button type="submit" name="remove_admin" class="btn btn-warning">Remove Admin Rights</button>#}
-{#        {% endif %}#}
-{#    </form>#}
 {% endblock %}
+
+
+{#{% extends 'base.html' %}#}
+{##}
+{#{% block content %}#}
+{#    <h2>User Profile: {{ profile_user.username }}</h2>#}
+{#    <p>Email: {{ profile_user.email }}</p>#}
+{#    <p>First name: {{ profile_user.first_name }}</p>#}
+{#    <p>Last name: {{ profile_user.last_name }}</p>#}
+{#    <p>Balance: {{ profile_user.account.balance }}</p>#}
+{##}
+{#    <div class="button-container" style="display: flex; gap: 10px;">#}
+{#        <form method="post">#}
+{#            {% csrf_token %}#}
+{#            <!-- Display the "Make Admin" button only if the user is not a staff member -->#}
+{#            {% if not profile_user.is_staff %}#}
+{#                <button type="submit" name="make_admin" class="btn btn-primary">Make Admin</button>#}
+{#            {% endif %}#}
+{#            <!-- Display the "Remove Admin Rights" button only for superusers, and not for themselves -->#}
+{#            {% if request.user.is_superuser and profile_user.is_staff and profile_user != request.user %}#}
+{#                <button type="submit" name="remove_admin" class="btn btn-warning">Remove Admin Rights</button>#}
+{#            {% endif %}#}
+{#        </form>#}
+{#        {% if request.user.is_superuser and profile_user != request.user %}#}
+{#            <form method="post" action="{% url 'adminapp:delete_user' profile_user.id%}">#}
+{#                <button type="submit" class="btn btn-danger">Delete</button>#}
+{#            </form>#}
+{#        {% endif %}#}
+{#    </div>#}
+{#{% endblock %}#}
+

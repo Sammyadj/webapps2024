@@ -1,0 +1,22 @@
+<!-- transaction_summary.html -->
+{% extends 'base.html' %}
+{% block content %}
+    <h2>Transaction Summary</h2>
+    <div>
+        <p>Amount to send: {{ amount }} {{ sender_currency }}</p>
+        <p>Recipient: {{ recipient }}</p>
+        <p>Currency: {{ recipient_currency }}</p>
+        <p>Conversion rate: 1 {{ sender_currency }} = {{ conversion_rate }} {{ recipient_currency }}</p>
+        <p><strong>{{ recipient|upper }}</strong> will receive {{ converted_amount }} {{ recipient_currency }}</p>
+    </div>
+    <div>
+        <form method="post" action="{% url 'transactions:confirm_transaction' %}">
+            {% csrf_token %}
+            <!-- Include hidden fields to carry over the transaction data -->
+            <input type="hidden" name="amount" value="{{ amount }}">
+            <!-- Add other hidden fields as necessary -->
+            <button type="submit" class="btn btn-success">Confirm</button>
+        </form>
+        <a href="{% url 'transactions:send_and_request_homepage' %}" class="btn btn-danger">Cancel</a>
+    </div>
+{% endblock %}

@@ -19,27 +19,30 @@ class Account(models.Model):
 
 class UserEmail(models.Model):
     to_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='received_emails', on_delete=models.CASCADE)
+    from_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='sent_emails', on_delete=models.CASCADE)
     subject = models.CharField(max_length=255)
     body = models.TextField()
     sent_at = models.DateTimeField(auto_now_add=True)
     read = models.BooleanField(default=False)
 
-    # You might want to have a method to set the email as read
-    def mark_as_read(self):
-        self.read = True
-        self.save()
-
-
-class UserNotification(models.Model):
-    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
-    title = models.CharField(max_length=255)
-    message = models.TextField()
-    timestamp = models.DateTimeField(default=timezone.now)
-    read = models.BooleanField(default=False)
-
     def __str__(self):
-        return f"Notification for {self.recipient.username}: {self.title}"
+        return f"Notification for {self.to_user.username}: {self.subject}"
 
     def mark_as_read(self):
         self.read = True
         self.save()
+
+
+# class UserNotification(models.Model):
+#     recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
+#     title = models.CharField(max_length=255)
+#     message = models.TextField()
+#     timestamp = models.DateTimeField(default=timezone.now)
+#     read = models.BooleanField(default=False)
+#
+#     def __str__(self):
+#         return f"Notification for {self.recipient.username}: {self.title}"
+#
+#     def mark_as_read(self):
+#         self.read = True
+#         self.save()

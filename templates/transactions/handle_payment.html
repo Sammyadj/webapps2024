@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container">
+        <h2>Confirm Payment</h2>
+        <p>You are about to pay {{ money_request.amount_requested }} {{ money_request.currency }} to {{ money_request.requester.get_full_name }}.</p>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form }}
+            <button type="submit" class="btn btn-success">Confirm Payment</button>
+        </form>
+
+        <a href="{% url 'transactions:list' %}" class="btn btn-warning">Cancel</a>
+    </div>
+{% endblock %}
