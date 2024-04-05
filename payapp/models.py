@@ -5,11 +5,7 @@ from register.models import User
 from django.utils import timezone
 from transactions.models import MoneyRequest
 
-CURRENCY_CHOICES = [
-    ('GBP', 'British Pound'),
-    ('USD', 'US Dollar'),
-    ('EUR', 'Euro'),
-]
+CURRENCY_CHOICES = [('GBP', 'British Pound'), ('USD', 'US Dollar'), ('EUR', 'Euro')]
 
 
 class Account(models.Model):
