@@ -1,7 +1,7 @@
 from decimal import Decimal
 from currencyconversion.converter import api_converter2
 from register.models import User
-from transactions.models import Transaction
+from transactions.models import Transaction, MoneyRequest
 from .forms import MoneyRequestForm
 from .models import Account, UserEmail
 from django.shortcuts import render, get_object_or_404, redirect
@@ -61,19 +61,22 @@ def request_money_web(request):
                 context['money_request_form'] = money_request_form
                 return render(request, 'transactions/send_and_receive.html', context)
 
-            # Create the in-app email instance
-            request.session['transaction_data'] = {
-                'recipient_id': recipient.id,
-                'amount': str(amount),
-                'currency_req': currency_req
-            }
+            # Create the in-app object
+            money_req = MoneyRequest.objects.create(
+                requester=request.user,
+                requested_from=recipient,
+                amount_requested=amount,
+                currency=currency_req,
+                status='PENDING'
+            )
 
             UserEmail.objects.create(
                 to_user=recipient,
                 from_user=request.user,
                 subject='Money Request',
                 body=f"{request.user} sent you a money request. Amount requested: {amount} {currency_req}.",
-                sent_at=timezone.now()
+                sent_at=timezone.now(),
+                money_request=money_req
             )
 
             messages.success(request, 'Money request sent successfully.')
@@ -96,67 +99,71 @@ def mail_list(request):
 @login_required
 def mail_detail(request, email_id):
     email = get_object_or_404(UserEmail, id=email_id, to_user=request.user)
+    # Ensure the email object has a linked money request
+    money_request_id = email.money_request.id if email.money_request else None
     email.mark_as_read()
-    return render(request, 'payapp/mail_detail.html', {'email': email})
+    return render(request, 'payapp/mail_detail.html', {'email': email, 'money_request_id': money_request_id})
 
 
 @login_required
-def confirm_payment(request, email_id):
-    user_email = get_object_or_404(UserEmail, id=email_id, to_user=request.user)
-    transaction_data = request.session.get('transaction_data')
+def confirm_payment(request, money_request_id):
+    money_request = get_object_or_404(MoneyRequest, id=money_request_id, requested_from=request.user)
 
-    if not transaction_data or str(user_email.to_user.id) != transaction_data.get('recipient_id'):
-        messages.error(request, 'There was a problem with your transaction data.')
+    # Ensure that the money request is still pending
+    if money_request.status != 'PENDING':
+        messages.error(request, 'This money request has already been processed.')
         return redirect('payapp:mail_list')
-    # Logic to confirm the payment
+
     if request.method == 'POST':
+        # Assume a form submission has taken place with the action being "confirm"
         with db_transaction.atomic():
-            # payee is the requester (the original sender of the money request message)
-            # payer is the recipient (the receiver of the money request message)
-            payee = Account.objects.select_for_update().get(user=request.user)
-            payer = User.objects.get(username=transaction_data['recipient'])
-            amount = Decimal(transaction_data['amount'])
-            currency_req = transaction_data['currency_req']
-            payee_account = Account.objects.select_for_update().get(user=payee)
+            # The payee (requester) account is credited, and the payer (requested_from) is debited
+            payee_account = Account.objects.select_for_update().get(user=money_request.requester)
+            payer_account = Account.objects.select_for_update().get(user=request.user)
 
-            # Convert the amount to the receiver's currency if different
-            if payer.currency != payee_account.currency:
-                amount = api_converter2(amount, payer.currency, payee_account.currency)
+            # Perform currency conversion if necessary
+            if payee_account.currency != payer_account.currency:
+                converted_amount = api_converter2(money_request.amount_requested, payer_account.currency, payee_account.currency)
+            else:
+                converted_amount = money_request.amount_requested
 
-            # Create the transaction record
-            Transaction.objects.create(
-                sender=request.user,
-                receiver=payee,
-                amount=amount,
-                currency=currency_req
-            )
+            # Perform the transaction logic here
+            payer_account.balance -= converted_amount
+            payer_account.save()
 
-            # Update the sender's and receiver's account balances
-            payer.balance -= amount  # Debit the payer's account with the amount
-            payer.save()
-            payee_account.balance += amount  # Credit the payee's account with the amount
+            payee_account.balance += converted_amount
             payee_account.save()
-    # After confirming payment, delete session data related to this transaction
-    del request.session['transaction_data']
-    messages.success(request, "Payment confirmed.")
-    return redirect('payapp:mail_list')
+
+            # Update the status of the MoneyRequest
+            money_request.status = 'PAID'
+            money_request.save()
+
+            # Additional logic for sending a confirmation message or email could be added here
+
+        messages.success(request, 'Payment confirmed successfully.')
+        # Redirect to a confirmation page or the money request list
+        return redirect('payapp:mail_list')
+
+    # If it's a GET request, you could display a confirmation page with details about the money request
+    return HttpResponseNotAllowed(['POST'])
 
 
 @login_required
-def decline_payment(request, email_id):
-    user_email = get_object_or_404(UserEmail, id=email_id, to_user=request.user)
-    if request.method == 'POST':
-        transaction_data = request.session.get('transaction_data')
-        if not transaction_data:
-            messages.error(request, 'No transaction data found. Session has either ended or does not exist.')
-            return redirect('payapp:mail_list')
-
-    # After declining payment, delete session data related to this transaction
-        request.session.pop('transaction_data', None)
-        messages.success(request, "Payment declined.")
-        return redirect('payapp:mail_list')
-    else:
-        return HttpResponseNotAllowed(['POST'])
+def decline_payment(request, money_request_id):
+    # user_email = get_object_or_404(UserEmail, id=money_request_id, to_user=request.user)
+    # if request.method == 'POST':
+    #     transaction_data = request.session.get('transaction_data')
+    #     if not transaction_data:
+    #         messages.error(request, 'No transaction data found. Session has either ended or does not exist.')
+    #         return redirect('payapp:mail_list')
+    #
+    # # After declining payment, delete session data related to this transaction
+    #     request.session.pop('transaction_data', None)
+    #     messages.success(request, "Payment declined.")
+    #     return redirect('payapp:mail_list')
+    # else:
+    #     return HttpResponseNotAllowed(['POST'])
+    pass
 
 
 @login_required

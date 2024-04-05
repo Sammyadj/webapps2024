@@ -8,14 +8,13 @@
         <div class="email-body">
             {{ email.body|linebreaks }}
         </div>
-
-        <!-- Assuming you have some method of confirming or declining payment requests -->
-        {% if email.subject == "Money Request" %}
-            <form action="{% url 'payapp:confirm_payment' email.id %}" method="post">
+    
+        {% if email.subject == "Money Request" and money_request_id %}
+            <form action="{% url 'payapp:confirm_payment' money_request_id %}" method="post">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-success">Confirm Payment</button>
             </form>
-            <form action="{% url 'payapp:decline_payment' email.id %}" method="post">
+            <form action="{% url 'payapp:decline_payment' money_request_id %}" method="post">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-danger">Decline Payment</button>
             </form>
