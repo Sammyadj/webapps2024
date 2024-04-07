@@ -15,5 +15,5 @@ Users can access all their transactions, that is, sent and received payments and
 
 An administrator can see all user accounts and all transactions.
 
-A separate RESTful web service must implement currency conversion. The exchange rates will be statically assigned (hard-coded) in the RESTful service source code.
+A separate RESTful web service must implement currency conversion. The exchange rates will be statically assigned (hard-coded) in the RESTful service source code or use an external API.
 
