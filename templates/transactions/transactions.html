@@ -5,7 +5,7 @@
 {% block content %}
     <div class="container mt-3">
         <h2>Your Transactions</h2>
-        {% if transactions %}
+        {% if transactions or moneyRequest%}
             <table class="table">
                 <thead>
                 <tr>
@@ -24,6 +24,15 @@
                         <td>{{ transaction.receiver.username }}</td>
                         <td>{{ transaction.amount }}</td>
                         <td>{{ transaction.currency }}</td>
+                    </tr>
+                {% endfor %}
+                {% for moneyreq in moneyRequest %}
+                    <tr>
+                        <td>{{ moneyreq.created_at }}</td>
+                        <td>{{ moneyreq.requester.username }}</td>
+                        <td>{{ moneyreq.requested_from.username }}</td>
+                        <td>{{ moneyreq.amount_requested }}</td>
+                        <td>{{ moneyreq.currency }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

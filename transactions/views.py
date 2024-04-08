@@ -226,4 +226,5 @@ def transaction_list(request):
     # Get all transactions where the user is either the sender or the receiver
     transactions = Transaction.objects.filter(
         Q(sender=request.user) | Q(receiver=request.user)).order_by('-timestamp')  # order it by timestamp
-    return render(request, 'transactions/transactions.html', {'transactions': transactions})
+    moneyrequest = MoneyRequest.objects.filter( Q(requester=request.user) | Q(requested_from=request.user)).order_by('-created_at')
+    return render(request, 'transactions/transactions.html', {'transactions': transactions, 'moneyRequest': moneyrequest})
